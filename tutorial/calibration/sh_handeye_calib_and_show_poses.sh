@@ -18,6 +18,6 @@ FN_GRIPPER2CAMERA=$4
 python hand_eye_calibration_show_extrinsics_with_robot_base.py --ndata $N_IMG --eMc_yaml $FN_GRIPPER2CAMERA.yaml
 else
 N_IMG=$1
-FN_GRIPPER2CAMERA=$4
+FN_GRIPPER2CAMERA=$2
 python hand_eye_calibration_show_extrinsics_with_robot_base.py --ndata $N_IMG --eMc_yaml $FN_GRIPPER2CAMERA.yaml
 fi

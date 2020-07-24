@@ -91,7 +91,8 @@ int main()
         // Initialize first poses
         cMo[0].buildFrom(0, 0, 0.5, 0, 0, 0); // z=0.5 m
         wMe[0].buildFrom(0, 0, 0, 0, 0, 0);   // Id
-      } else if (i == 1)
+      } 
+      else if (i == 1)
         v_c[3] = M_PI/8 ;
       else if (i == 2)
         v_c[4] = M_PI/8 ;

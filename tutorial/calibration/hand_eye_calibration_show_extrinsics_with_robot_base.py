@@ -163,7 +163,7 @@ def create_board_model(extrinsics, board_width, board_height, square_size, draw_
         return [X_board]
 
 def draw(ax, cam_width, cam_height, focal_px, scale_focal,
-         extrinsics, board_width, board_height, square_size,
+         extrinsics, end_effector_poses, board_width, board_height, square_size,
          eMc, frame_size):
     from matplotlib import cm
 
@@ -181,24 +181,40 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
 
     patternCentric = True
 
+    print('len(X_static) : ', len(X_static));   #exit();
+    li_color = ['k', 'r', 'g', 'b']
     for i in range(len(X_static)):
         X = np.zeros(X_static[i].shape)
+        print('i :', i, ', X_static[i].shape :', X_static[i].shape)
         for j in range(X_static[i].shape[1]):
+            print('\tj :', j, ', X_static[i][:, j] :', X_static[i][:, j])
             X[:,j] = transform_to_matplotlib_frame(np.eye(4), X_static[i][:,j], patternCentric)
-        ax.plot3D(X[0,:], X[1,:], X[2,:], color='r')
+        #print('X.shape :', X.shape);    exit()
+        #ax.plot3D(X[0, :], X[1, :], X[2, :], color='r')
+        ax.plot3D(X[0, :], X[1, :], X[2, :], color = li_color[i])
+        '''
+        ax.plot3D(X[0, 0], X[1, 0], X[2, 0], color='k')
+        ax.plot3D(X[0, 1], X[1, 1], X[2, 1], color='r')
+        ax.plot3D(X[0, 2], X[1, 2], X[2, 2], color='g')
+        ax.plot3D(X[0, 3], X[1, 3], X[2, 3], color='b')
+        '''
         min_values = np.minimum(min_values, X[0:3,:].min(1))
         max_values = np.maximum(max_values, X[0:3,:].max(1))
-
+    #exit()
+    print('extrinsics.shape :', extrinsics.shape)
+    print('end_effector_poses.shape :', end_effector_poses.shape);  #exit()
     for idx in range(extrinsics.shape[0]):
         cMo = pose_to_homogeneous_matrix(extrinsics[idx,:])
+        fMe = pose_to_homogeneous_matrix(end_effector_poses[idx,:])
         for i in range(len(X_moving)):
             X = np.zeros(X_moving[i].shape)
             for j in range(X_moving[i].shape[1]):
                 X[0:4,j] = transform_to_matplotlib_frame(cMo, X_moving[i][0:4,j], patternCentric)
+            #print('i :', i, ', X.shape :', X.shape);    #exit();
             ax.plot3D(X[0,:], X[1,:], X[2,:], color=colors[idx])
             min_values = np.minimum(min_values, X[0:3,:].min(1))
             max_values = np.maximum(max_values, X[0:3,:].max(1))
-
+        #exit()
         eMo = eMc.dot(cMo)
         oX = np.zeros((4,2), dtype=np.float64)
         oY = np.zeros((4,2), dtype=np.float64)
@@ -221,6 +237,15 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
         ec[:,1] = transform_to_matplotlib_frame(cMo, X_moving[2][0:4,0], patternCentric)
         ax.plot3D(ec[0,:], ec[1,:], ec[2,:], color=colors[idx])
 
+
+        fe = np.zeros((4,2), dtype=np.float64)
+        #oMf = eMo.dot(fMe)
+        fMo = fMe.dot(eMo)
+        #fMo = np.linalg.inv(fMo)
+        fe[:,0] = transform_to_matplotlib_frame(eMo, X_frame[:, 0], patternCentric)
+        fe[:,1] = transform_to_matplotlib_frame(fMo, X_frame[:, 0], not patternCentric)
+        ax.plot3D(fe[0,:], fe[1,:], fe[2,:], color=colors[idx])
+ 
     return min_values, max_values
 
 def main():
@@ -234,6 +259,10 @@ def main():
                         help='Path to the estimated eMc yaml file.')
     parser.add_argument('--start_index', type=int, default=1,
                         help='Start index.')
+    
+    parser.add_argument('--fPe_file_pattern', type=str, default='pose_fPe_%d.yaml',
+                        help='fPe filename pattern for end effector poses.')
+
     parser.add_argument('--cPo_file_pattern', type=str, default='pose_cPo_%d.yaml',
                         help='cPo filename pattern for camera poses.')
     parser.add_argument('--cam_width', type=float, default=0.064/2,
@@ -260,11 +289,15 @@ def main():
             return np.array(pose_dict['data']).flatten()
 
     camera_poses = np.empty((args.ndata, 6), dtype=np.float64)
+    end_effector_poses = np.empty((args.ndata, 6), dtype=np.float64)
     for idx in range(args.start_index, args.start_index + args.ndata):
         camera_pose_filename = args.cPo_file_pattern % (idx)
-        camera_poses[idx-args.start_index,:] = load_yaml_pose(camera_pose_filename)
+        camera_poses[idx - args.start_index,:] = load_yaml_pose(camera_pose_filename)
+        end_effector_pose_filename = args.fPe_file_pattern % (idx)
+        end_effector_poses[idx - args.start_index,:] = load_yaml_pose(end_effector_pose_filename)
 
-    print('camera_poses:\n', camera_poses)
+    print('camera_poses :\n', camera_poses)
+    print('end_effector_poses :\n', end_effector_poses)
     eMc = load_yaml_pose(args.eMc_yaml)
     print('eMc:', eMc.transpose())
 
@@ -279,7 +312,7 @@ def main():
     cam_height = args.cam_height
     scale_focal = args.scale_focal
     min_values, max_values = draw(ax, cam_width, cam_height, args.focal_px,
-                                  scale_focal, camera_poses, args.board_width,
+                                  scale_focal, camera_poses, end_effector_poses, args.board_width,
                                   args.board_height, args.square_size,
                                   pose_to_homogeneous_matrix(eMc), args.frame_size)
 
@@ -302,8 +335,8 @@ def main():
     ax.set_ylabel('-y')
     ax.set_zlabel('-z')
     ax.set_title('Hand-Eye Calibration Visualization')
-
     plt.show()
+    #plt.axis('equal')
 
 if __name__ == '__main__':
     main()

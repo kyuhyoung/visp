@@ -81,12 +81,15 @@ int main(int argc, const char ** argv) {
 
   vpImage<vpRGBa> I;
   reader.open(I);
-
+    //std::cout << "AAA chess" << std::endl;
 #ifdef VISP_HAVE_X11
+    std::cout << "BBB chess" << std::endl;
   vpDisplayX d(I);
 #elif defined VISP_HAVE_GDI
+    std::cout << "CCC chess" << std::endl;
   vpDisplayGDI d(I);
 #elif defined VISP_HAVE_OPENCV
+    std::cout << "DDD chess" << std::endl;
   vpDisplayOpenCV d(I);
 #endif
 
@@ -195,6 +198,7 @@ int main(int argc, const char ** argv) {
 }
 #else
 int main() {
+  std::cerr << "Current OpenCV version is " << VISP_HAVE_OPENCV_VERSION << std::endl;
   std::cerr << "OpenCV 2.3.0 or higher is requested to run the calibration." << std::endl;
   return EXIT_SUCCESS;
 }
