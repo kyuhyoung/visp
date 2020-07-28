@@ -237,6 +237,8 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
         ec[:,1] = transform_to_matplotlib_frame(cMo, X_moving[2][0:4,0], patternCentric)
         ax.plot3D(ec[0,:], ec[1,:], ec[2,:], color=colors[idx])
 
+        #ax.text(ec[0, 0], ec[1, 0], ec[2, 0], '%d' % idx, color=colors[idx])
+        ax.text(ec[0, 1], ec[1, 1], ec[2, 1], '%d' % idx, color=colors[idx])
 
         fe = np.zeros((4,2), dtype=np.float64)
         #oMf = eMo.dot(fMe)
@@ -245,7 +247,7 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
         fe[:,0] = transform_to_matplotlib_frame(eMo, X_frame[:, 0], patternCentric)
         fe[:,1] = transform_to_matplotlib_frame(fMo, X_frame[:, 0], not patternCentric)
         ax.plot3D(fe[0,:], fe[1,:], fe[2,:], color=colors[idx])
- 
+        print('idx :', idx, 'colors[idx] :', colors[idx])
     return min_values, max_values
 
 def main():
