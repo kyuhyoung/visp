@@ -1,17 +1,163 @@
 //! \example tutorial-hand-eye-calibration.cpp
 #include <visp3/vision/vpHandEyeCalibration.h>
+#include <vector>
+//#include <opencv2/opencv.hpp?>
+
+#define PI  3.14159265358979
+
+double deg2rad(double degree)
+{
+    return degree * PI / 180;
+    }
+
+//vector<string> split_string_by_delimiter(const string& strin, const string& delimiter)
+std::vector<std::string> split_string_by_delimiter(const std::string& strin, std::string const& delims)
+{
+    //std::string const delims{ " .,:;!?" };
+    std::vector<std::string> li_str;
+    size_t beg, pos = 0;
+    while ((beg = strin.find_first_not_of(delims, pos)) != std::string::npos)
+    {
+        pos = strin.find_first_of(delims, beg + 1);
+        li_str.push_back(strin.substr(beg, pos - beg));
+        //std::cout << li_str.back() << std::endl;
+    }
+    return li_str;
+}    
+
+bool is_only_number(const std::string& s)
+{
+    bool is_number = true;
+    int n_pure_num = 0, n_dot = 0;
+    if(s.empty()) is_number = false;
+    else
+    {
+        for(auto it = s.begin(); it != s.end(); it++)
+        {
+            //std::cout << "*it : " << *it << std::endl;
+            if(s.begin() == it)
+            {
+                if(!(std::isdigit(*it) || '-' == *it || '.' == *it)) {    is_number = false;  break; }
+                if(std::isdigit(*it)) n_pure_num++;
+                else
+                {
+                    if('.' == *it) n_dot++;
+                }     
+            }
+            else
+            {
+                if('.' == *it) {
+                    if(++n_dot > 1) { is_number = false;  break; }   
+                }     
+                else
+                {
+                    if(std::isdigit(*it)) n_pure_num++;
+                    else { is_number = false;  break; }
+                }     
+            }
+        }
+    }
+    if(0 == n_pure_num) is_number = false;
+    //std::cout << "s : " << s << ", is_number : " << is_number << std::endl; 
+    //exit(0);
+    return is_number;
+}
+
+bool make_yaml_from_txt(std::string& prefix_base2gripper_camera2board, std::string prefix_yaml_base2gripper, std::string& prefix_yaml_camera2board, int id_start, int ndata)
+{
+    bool succeed = true;
+    for(int id = id_start; id < id_start + ndata; id++)
+    {
+        std::vector<double> li_num;
+        std::string path_txt = prefix_base2gripper_camera2board + std::to_string(id) + ".txt";
+        std::cout << "Converting " << path_txt << " into YAML." << std::endl;
+        std::ifstream input(path_txt);
+        if(input.is_open()) {
+            std::string line, delimiter = " =[],;";
+            std::string const delims{ delimiter };
+            while(std::getline(input, line)) {
+                // using printf() in all tests for consistency
+                //printf("%s\n", line.c_str());
+                //if(line.empty() || '-' == line.at(0)) continue;
+                if(line.empty()) continue;
+                std::vector<std::string> li_str = split_string_by_delimiter(line, delims);
+
+                for(auto str : li_str) 
+                {
+                    //str = "";
+                    //str = "+45.7";
+                    //str = "-45.7";
+                    //str = "-0.457";
+                    //str = "0.45.7";
+                    //str = "457.";
+                    //str = ".457";
+                    if(is_only_number(str)) li_num.push_back(stof(str));
+                }
+            }
+            input.close();
+            //std::cout << "li_num.size() : " << li_num.size() << std::endl;
+            //exit(0);
+        }
+        if(12 != li_num.size()) { succeed = false;    break;}
+        double 
+        cPo_tx = li_num[0], 
+        cPo_ty = li_num[1], 
+        cPo_tz = li_num[2], 
+        cPo_rx = li_num[3], 
+        cPo_ry = li_num[4], 
+        cPo_rz = li_num[5],
+        fPe_tx = li_num[6], 
+        fPe_ty = li_num[7], 
+        fPe_tz = li_num[8], 
+        fPe_rx = li_num[9], 
+        fPe_ry = li_num[10], 
+        fPe_rz = li_num[11];
+        
+        if(cPo_tx > 10 || cPo_ty > 10 || cPo_tz > 10) { cPo_tx /= 1000.0;   cPo_ty /= 1000.0;   cPo_tz /= 1000.0; }
+        
+        if(fPe_tx > 10 || fPe_ty > 10 || fPe_tz > 10) { fPe_tx /= 1000.0;   fPe_ty /= 1000.0;   fPe_tz /= 1000.0; }
+              
+        if(cPo_rx > PI || cPo_ry > PI || cPo_rz > PI) { cPo_rx = deg2rad(cPo_rx);   cPo_ry = deg2rad(cPo_ry);   cPo_rz = deg2rad(cPo_rz); }
+        if(fPe_rx > PI || fPe_ry > PI || fPe_rz > PI) { fPe_rx = deg2rad(fPe_rx);   fPe_ry = deg2rad(fPe_ry);   fPe_rz = deg2rad(fPe_rz); }
+
+        vpPoseVector cPo(cPo_tx, cPo_ty, cPo_tz, cPo_rx, cPo_ry, cPo_rz), fPe(fPe_tx, fPe_ty, fPe_tz, fPe_rx, fPe_ry, fPe_rz);
+        std::string path_cPo = prefix_yaml_camera2board + std::to_string(id) + ".yaml", path_fPe = prefix_yaml_base2gripper + std::to_string(id) + ".yaml";
+        bool is_cPo_saved = cPo.saveYAML(path_cPo, cPo), is_fPe_saved = fPe.saveYAML(path_fPe, fPe);
+        if(!(is_cPo_saved && is_fPe_saved))
+        {
+            if(!is_cPo_saved) std::cout << "Could NOT save cPo at : " << path_cPo << std::endl;
+            if(!is_fPe_saved) std::cout << "Could NOT save fPe at : " << path_fPe << std::endl;
+            exit(0);
+        }     
+        else
+        {
+            std::cout << "Saved cPo at : " << path_cPo << std::endl;
+            std::cout << "Saved fPe at : " << path_fPe << std::endl;
+        }
+    }
+
+    return succeed;
+}
+
 
 int main(int argc, char *argv[])
 {
-    unsigned int ndata = 0;
-    std::string fn_gripper2camera, prefix_yaml_base2gripper, prefix_yaml_camera2board;
+    unsigned int id_start = 0, ndata = 0;
+    bool is_floyd = false;
+    std::string prefix_base2gripper_camera2board, fn_gripper2camera, prefix_yaml_base2gripper, prefix_yaml_camera2board;
     for (int i = 1; i < argc; i++) {
         if (std::string(argv[i]) == "--ndata" && i + 1 < argc) {
             ndata = atoi(argv[i + 1]);
         }
+        
+        else if (std::string(argv[i]) == "--id_start" && i + 1 < argc) {
+            id_start = atoi(argv[i + 1]);
+        }
+
         else if (std::string(argv[i]) == "--fn_gripper2camera" && i + 1 < argc) 
         {
             fn_gripper2camera = argv[i + 1];
+            //std::cout << "fn_gripper2camera : " << fn_gripper2camera << std::endl;  exit(0);
         }
         else if (std::string(argv[i]) == "--prefix_yaml_base2gripper" && i + 1 < argc) 
         {
@@ -21,6 +167,12 @@ int main(int argc, char *argv[])
         {
             prefix_yaml_camera2board = argv[i + 1];
         }
+        
+        else if (std::string(argv[i]) == "--floyd_txt" && i + 1 < argc) 
+        {
+            is_floyd = true;    prefix_base2gripper_camera2board = argv[i + 1];
+        }
+       
         else if (std::string(argv[i]) == "--help" || std::string(argv[i]) == "-h") {
             std::cout << argv[0] << " [--ndata <number of data to process>] "
                 "[--help] [-h]" << std::endl;
@@ -35,10 +187,18 @@ int main(int argc, char *argv[])
     std::vector<vpHomogeneousMatrix> cMo(ndata);
     std::vector<vpHomogeneousMatrix> wMe(ndata);
     vpHomogeneousMatrix eMc;
+    
+    if(is_floyd) 
+    {   
+        prefix_yaml_camera2board = prefix_base2gripper_camera2board + "cPo_";
+        prefix_yaml_base2gripper = prefix_base2gripper_camera2board + "fPe_";
 
-    for (unsigned int i = 1; i <= ndata; i++) {
+        make_yaml_from_txt(prefix_base2gripper_camera2board, prefix_yaml_base2gripper, prefix_yaml_camera2board, id_start, ndata);
+    }
+    //for (unsigned int i = id_start; i <= ndata; i++) {
+    for (unsigned int idx = 0; idx < ndata; idx++) {
+        int i = idx + id_start;
         std::ostringstream ss_fPe, ss_cPo;
-        //ss_fPe << "pose_fPe_" << i << ".yaml";  ss_cPo << "pose_cPo_" << i << ".yaml";
         ss_fPe << prefix_yaml_base2gripper << i << ".yaml"; ss_cPo << prefix_yaml_camera2board << i << ".yaml";  
         std::cout << "Use fPe=" << ss_fPe.str() << ", cPo=" << ss_cPo.str() << std::endl;
 
@@ -47,14 +207,16 @@ int main(int argc, char *argv[])
             std::cout << "Unable to read data from: " << ss_fPe.str() << std::endl;
             return EXIT_FAILURE;
         }
-        wMe[i - 1] = vpHomogeneousMatrix(wPe);
+        //wMe[i - 1] = vpHomogeneousMatrix(wPe);
+        wMe[idx] = vpHomogeneousMatrix(wPe);
 
         vpPoseVector cPo;
         if (cPo.loadYAML(ss_cPo.str(), cPo)  == false) {
             std::cout << "Unable to read data from: " << ss_cPo.str() << std::endl;
             return EXIT_FAILURE;
         }
-        cMo[i-1] = vpHomogeneousMatrix(cPo);
+        //cMo[i-1] = vpHomogeneousMatrix(cPo);
+        cMo[idx] = vpHomogeneousMatrix(cPo);
     }
 
     int ret = vpHandEyeCalibration::calibrate(cMo, wMe, eMc);

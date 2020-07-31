@@ -181,13 +181,13 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
 
     patternCentric = True
 
-    print('len(X_static) : ', len(X_static));   #exit();
+    #print('len(X_static) : ', len(X_static));   #exit();
     li_color = ['k', 'r', 'g', 'b']
     for i in range(len(X_static)):
         X = np.zeros(X_static[i].shape)
-        print('i :', i, ', X_static[i].shape :', X_static[i].shape)
+        #print('i :', i, ', X_static[i].shape :', X_static[i].shape)
         for j in range(X_static[i].shape[1]):
-            print('\tj :', j, ', X_static[i][:, j] :', X_static[i][:, j])
+            #print('\tj :', j, ', X_static[i][:, j] :', X_static[i][:, j])
             X[:,j] = transform_to_matplotlib_frame(np.eye(4), X_static[i][:,j], patternCentric)
         #print('X.shape :', X.shape);    exit()
         #ax.plot3D(X[0, :], X[1, :], X[2, :], color='r')
@@ -201,8 +201,8 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
         min_values = np.minimum(min_values, X[0:3,:].min(1))
         max_values = np.maximum(max_values, X[0:3,:].max(1))
     #exit()
-    print('extrinsics.shape :', extrinsics.shape)
-    print('end_effector_poses.shape :', end_effector_poses.shape);  #exit()
+    #print('extrinsics.shape :', extrinsics.shape)
+    #print('end_effector_poses.shape :', end_effector_poses.shape);  #exit()
     for idx in range(extrinsics.shape[0]):
         cMo = pose_to_homogeneous_matrix(extrinsics[idx,:])
         fMe = pose_to_homogeneous_matrix(end_effector_poses[idx,:])
@@ -247,7 +247,7 @@ def draw(ax, cam_width, cam_height, focal_px, scale_focal,
         fe[:,0] = transform_to_matplotlib_frame(eMo, X_frame[:, 0], patternCentric)
         fe[:,1] = transform_to_matplotlib_frame(fMo, X_frame[:, 0], not patternCentric)
         ax.plot3D(fe[0,:], fe[1,:], fe[2,:], color=colors[idx])
-        print('idx :', idx, 'colors[idx] :', colors[idx])
+        #print('idx :', idx, 'colors[idx] :', colors[idx])
     return min_values, max_values
 
 def main():
@@ -297,6 +297,7 @@ def main():
         camera_poses[idx - args.start_index,:] = load_yaml_pose(camera_pose_filename)
         end_effector_pose_filename = args.fPe_file_pattern % (idx)
         end_effector_poses[idx - args.start_index,:] = load_yaml_pose(end_effector_pose_filename)
+        print("idx :", idx, ", camera_pose_filename :", camera_pose_filename, ", end_effector_pose_filename :", end_effector_pose_filename)
 
     print('camera_poses :\n', camera_poses)
     print('end_effector_poses :\n', end_effector_poses)

@@ -21,6 +21,8 @@
 #include <visp3/io/vpVideoReader.h>
 #include <visp3/vision/vpPose.h>
 
+using namespace cv;
+
 namespace {
 void calcChessboardCorners(int width, int height, double squareSize, std::vector<vpPoint> &corners) {
   corners.resize(0);
@@ -37,7 +39,96 @@ void calcChessboardCorners(int width, int height, double squareSize, std::vector
 }
 } //namespace
 
-int main(int argc, const char ** argv) {
+
+// Checks if a matrix is a valid rotation matrix.
+bool is_rotation_matrix(const Mat &R)
+{
+    Mat Rt;
+        transpose(R, Rt);
+            Mat shouldBeIdentity = Rt * R;
+                Mat I = Mat::eye(3,3, shouldBeIdentity.type());
+                    
+                        return  norm(I, shouldBeIdentity) < 1e-6;
+                            
+                            }
+
+
+cv::Mat combine_rotation_translation_into_homogeneous_matrix(const cv::Mat& rot, const cv::Mat& tra)
+{
+    cv::Mat rot_mat;
+    bool is_rot_valid = true;
+    int n_elem_rot = rot.rows * rot.cols;
+    if(3 == n_elem_rot)
+    {   
+        cv::Rodrigues(rot, rot_mat);    
+    }
+    else if(9 == n_elem_rot)
+    {
+        if(is_rotation_matrix(rot)) rot_mat = rot;
+        else is_rot_valid = false;
+    }
+    else is_rot_valid = false;
+    if(!is_rot_valid) { std::cout << "The given rotation matirx is NOT a real rotation matrix." << std::endl; exit(0); }
+    cv::Mat mat_homo = cv::Mat::eye(4, 4, CV_32F);
+    rot_mat.copyTo(mat_homo(cv::Rect(0, 0, 3, 3)));
+    tra.copyTo(mat_homo(cv::Rect(3, 0, 1, 3)));
+    return mat_homo;
+}
+
+template <typename T> 
+Mat init_mat_with_array_of_values(int n_r, int n_c, T li_val[]/*, int n_sp*/)
+{
+    std::cout << "AAA init" << std::endl;
+    Mat_<T> mat(n_r, n_c, li_val);
+    std::cout << "BBB init" << std::endl;
+    return mat;
+#if 0    
+    //cout_indented(n_sp, "init_mat START");
+        int iR, iE, iC;
+            Mat_<T> mat(n_r, n_c);
+                for(iR = 0, iE = 0; iR < n_r; iR++)
+                    {
+                            for(iC = 0; iC < n_c; iC++, iE++)
+                                    {
+                                                mat(iR, iC) = li_val[iE];
+                                                        }      
+                                                            }
+                                                                //cout_indented(n_sp, "init_mat END");
+                                                                    return mat;
+#endif //   0                                                                    
+                                                                    }
+
+std::pair<cv::Mat, cv::Mat> split_homogeneous_transform_matrix_into_rotation_and_translation(const Mat& mat_homo)
+{
+    if(!(mat_homo.rows >= 3 && mat_homo.cols >= 3 && mat_homo.cols == mat_homo.rows))
+    {
+        std::cout << "The given matrix is NOT homogeneous." << std::endl; exit(0);
+    }
+    int dim_rot = mat_homo.rows - 1;
+    cv::Mat mat_rot = mat_homo(cv::Rect(0, 0, dim_rot, dim_rot)).clone();
+    cv::Mat vec_tra = mat_homo(cv::Rect(dim_rot, 0, 1, dim_rot)).clone();   
+    return std::pair<cv::Mat, cv::Mat>(mat_rot, vec_tra);
+}
+
+int main(int argc, const char ** argv) 
+{
+#if 0
+    float data_rad[] = {0.1, 0.2, 0.3}, data_tra[] = {4, 8, 12};
+    cv::Mat rot_mat, rot_vec = init_mat_with_array_of_values<float>(3, 1, data_rad), tra_vec = init_mat_with_array_of_values<float>(3, 1, data_tra); 
+    std::cout << "rot_vec : " << std::endl << rot_vec << std::endl;   
+    std::cout << "tra_vec : " << std::endl << tra_vec << std::endl;   
+    cv::Mat mat_homo_1 = combine_rotation_translation_into_homogeneous_matrix(rot_vec, tra_vec);
+    std::cout << "mat_homo_1 : " << std::endl << mat_homo_1 << std::endl;    
+    cv::Rodrigues(rot_vec, rot_mat);
+    std::cout << "rot_mat : " << std::endl << rot_mat << std::endl;   
+    cv::Mat mat_homo_2 = combine_rotation_translation_into_homogeneous_matrix(rot_mat, tra_vec);
+    std::cout << "mat_homo_2 : " << std::endl << mat_homo_2 << std::endl;
+    std::pair<cv::Mat, cv::Mat> mat_rot_and_vec_tra = split_homogeneous_transform_matrix_into_rotation_and_translation(mat_homo_2);
+    cv::Mat mat_rot = mat_rot_and_vec_tra.first, vec_tra = mat_rot_and_vec_tra.second;
+    std::cout << "mat_rot : " << std::endl << mat_rot << std::endl;
+    std::cout << "vec_tra : " << std::endl << vec_tra << std::endl;
+    exit(0);
+#endif
   int chessboard_width = 9, chessboard_height = 6;
   double chessboard_square_size = 0.03;
   std::string input_filename = "";
