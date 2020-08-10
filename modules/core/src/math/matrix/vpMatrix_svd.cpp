@@ -152,6 +152,7 @@ int main()
 */
 void vpMatrix::svdOpenCV(vpColVector &w, vpMatrix &V)
 {
+    std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl;
   int rows = (int)this->getRows();
   int cols = (int)this->getCols();
   cv::Mat m(rows, cols, CV_64F, this->data);
@@ -239,6 +240,7 @@ int main()
 */
 void vpMatrix::svdLapack(vpColVector &w, vpMatrix &V)
 {
+    std::cout << "VISP_HAVE_LAPACK" << std::endl;
 #ifdef VISP_HAVE_GSL
   {
     // GSL cannot consider M < N. In that case we transpose input matrix
@@ -410,6 +412,7 @@ int main()
 */
 void vpMatrix::svdEigen3(vpColVector &w, vpMatrix &V)
 {
+    std::cout << "VISP_HAVE_EIGEN3" << std::endl;
   w.resize(this->getCols());
   V.resize(this->getCols(), this->getCols());
 

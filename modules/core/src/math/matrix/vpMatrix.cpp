@@ -2264,10 +2264,15 @@ int main()
 void vpMatrix::svd(vpColVector &w, vpMatrix &V)
 {
 #if defined(VISP_HAVE_LAPACK)
+    std::cout << "VISP_HAVE_LAPACK" << std::endl;
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   svdLapack(w, V);
+  //svdOpenCV(w, V);
 #elif defined(VISP_HAVE_EIGEN3)
+    std::cout << "VISP_HAVE_EIGEN" << std::endl;
   svdEigen3(w, V);
 #elif (VISP_HAVE_OPENCV_VERSION >= 0x020101) // Require opencv >= 2.1.1
+    std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl;
   svdOpenCV(w, V);
 #else
   (void)w;
@@ -2333,10 +2338,15 @@ Rank: 2
 unsigned int vpMatrix::pseudoInverse(vpMatrix &Ap, double svThreshold) const
 {
 #if defined(VISP_HAVE_LAPACK)
-  return pseudoInverseLapack(Ap, svThreshold);
+    //std::cout << "VISP_HAVE_LAPACK" << std::endl;
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
+    return pseudoInverseLapack(Ap, svThreshold);
+    //return pseudoInverseOpenCV(Ap, svThreshold);
 #elif defined(VISP_HAVE_EIGEN3)
+    //std::cout << "VISP_HAVE_EIGEN3" << std::endl;
   return pseudoInverseEigen3(Ap, svThreshold);
 #elif (VISP_HAVE_OPENCV_VERSION >= 0x020101) // Require opencv >= 2.1.1
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl;
   return pseudoInverseOpenCV(Ap, svThreshold);
 #else
   (void)Ap;
@@ -2399,10 +2409,15 @@ A^+ (pseudo-inverse): [3,2]=
 vpMatrix vpMatrix::pseudoInverse(double svThreshold) const
 {
 #if defined(VISP_HAVE_LAPACK)
+    //std::cout << "VISP_HAVE_LAPACK" << std::endl;
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   return pseudoInverseLapack(svThreshold);
+  //return pseudoInverseOpenCV(svThreshold);
 #elif defined(VISP_HAVE_EIGEN3)
+    //std::cout << "VISP_HAVE_EIGEN3" << std::endl;
   return pseudoInverseEigen3(svThreshold);
 #elif (VISP_HAVE_OPENCV_VERSION >= 0x020101) // Require opencv >= 2.1.1
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl;
   return pseudoInverseOpenCV(svThreshold);
 #else
   (void)svThreshold;
@@ -3181,6 +3196,7 @@ int main()
 */
 vpMatrix vpMatrix::pseudoInverseOpenCV(double svThreshold) const
 {
+    //std::cout << "VISP_HAVE_OPENCV : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   unsigned int nrows, ncols;
   unsigned int nrows_orig = getRows();
   unsigned int ncols_orig = getCols();
@@ -3257,6 +3273,7 @@ int main()
 */
 unsigned int vpMatrix::pseudoInverseOpenCV(vpMatrix &Ap, double svThreshold) const
 {
+    //std::cout << "VISP_HAVE_OPENCV : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   unsigned int nrows, ncols;
   unsigned int nrows_orig = getRows();
   unsigned int ncols_orig = getCols();
@@ -3338,6 +3355,7 @@ int main()
 */
 unsigned int vpMatrix::pseudoInverseOpenCV(vpMatrix &Ap, vpColVector &sv, double svThreshold) const
 {
+    //std::cout << "VISP_HAVE_OPENCV : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   unsigned int nrows, ncols;
   unsigned int nrows_orig = getRows();
   unsigned int ncols_orig = getCols();
@@ -3480,6 +3498,7 @@ vpMatrix &) const
 unsigned int vpMatrix::pseudoInverseOpenCV(vpMatrix &Ap, vpColVector &sv, double svThreshold, vpMatrix &imA,
                                            vpMatrix &imAt, vpMatrix &kerA) const
 {
+    //std::cout << "VISP_HAVE_OPENCV : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   unsigned int nrows = getRows();
   unsigned int ncols = getCols();
   unsigned int rank;
@@ -3573,10 +3592,15 @@ Singular values: 6.874359351  4.443330227
 unsigned int vpMatrix::pseudoInverse(vpMatrix &Ap, vpColVector &sv, double svThreshold) const
 {
 #if defined(VISP_HAVE_LAPACK)
+    //std::cout << "VISP_HAVE_LAPACK" << std::endl;
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   return pseudoInverseLapack(Ap, sv, svThreshold);
+  //return pseudoInverseOpenCV(Ap, sv, svThreshold);
 #elif defined(VISP_HAVE_EIGEN3)
+    //std::cout << "VISP_HAVE_EIGEN3" << std::endl;
   return pseudoInverseEigen3(Ap, sv, svThreshold);
 #elif (VISP_HAVE_OPENCV_VERSION >= 0x020101) // Require opencv >= 2.1.1
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl;
   return pseudoInverseOpenCV(Ap, sv, svThreshold);
 #else
   (void)Ap;
@@ -3806,10 +3830,15 @@ unsigned int vpMatrix::pseudoInverse(vpMatrix &Ap, vpColVector &sv, double svThr
                                      vpMatrix &kerAt) const
 {
 #if defined(VISP_HAVE_LAPACK)
+    //std::cout << "VISP_HAVE_LAPACK" << std::endl;
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl << std::endl;
   return pseudoInverseLapack(Ap, sv, svThreshold, imA, imAt, kerAt);
+  //return pseudoInverseOpenCV(Ap, sv, svThreshold, imA, imAt, kerAt);
 #elif defined(VISP_HAVE_EIGEN3)
+    //std::cout << "VISP_HAVE_EIGEN3" << std::endl;
   return pseudoInverseEigen3(Ap, sv, svThreshold, imA, imAt, kerAt);
 #elif (VISP_HAVE_OPENCV_VERSION >= 0x020101) // Require opencv >= 2.1.1
+    //std::cout << "VISP_HAVE_OPENCV_VERSION : " << VISP_HAVE_OPENCV_VERSION << std::endl;
   return pseudoInverseOpenCV(Ap, sv, svThreshold, imA, imAt, kerAt);
 #else
   (void)Ap;
