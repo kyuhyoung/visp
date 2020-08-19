@@ -52,6 +52,17 @@
 #include <visp3/core/vpMath.h>
 #include <visp3/core/vpMatrix.h>
 
+#if (VISP_HAVE_OPENCV_VERSION >= 0x020101) // Require opencv >= 2.1.1
+#define HE_WO_VISP
+#endif //   VISP_HAVE_OPENCV_VERSION
+
+#ifdef HE_WO_VISP
+#include <opencv2/core.hpp>
+#include <opencv2/calib3d.hpp>
+//#include <opencv2/sfm.hpp>
+using namespace cv;
+#endif  //  HE_WO_VISP
+
 /*!
   \class vpHandEyeCalibration
 
@@ -66,24 +77,37 @@ public:
 
   static int calibrate(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
                        vpHomogeneousMatrix &eMc);
+#ifdef HE_WO_VISP
+    static int calibrate_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eMc, int n_sp);
+    static double rad2deg(double radian);
+    static std::pair<cv::Mat, cv::Mat> split_homogeneous_transform_matrix_into_rotation_and_translation(const Mat& mat_homo, int n_sp);
+#endif  //  HE_WO_VISP
 
 private:
   static void calibrationVerifrMo(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
                                   const vpHomogeneousMatrix &eMc);
-  static int calibrationRotationTsai(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
-                                     vpRotationMatrix &eRc);
+  static int calibrationRotationTsai(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe, vpRotationMatrix &eRc);
   static int calibrationRotationTsaiOld(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
                                         vpRotationMatrix &eRc);
-  static int calibrationRotationProcrustes(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
-                                           vpRotationMatrix &eRc);
-  static int calibrationTranslation(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
-                                    vpRotationMatrix &eRc, vpTranslationVector &eTc);
+  static int calibrationRotationProcrustes(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe, vpRotationMatrix &eRc);
+  static int calibrationTranslation(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe, vpRotationMatrix &eRc, vpTranslationVector &eTc);
   static int calibrationTranslationOld(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
                                        vpRotationMatrix &eRc, vpTranslationVector &eTc);
   static double calibrationErrVVS(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
                                   const vpHomogeneousMatrix &eMc, vpColVector &errVVS);
-  static int calibrationVVS(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe,
-                            vpHomogeneousMatrix &eMc);
+  static int calibrationVVS(const std::vector<vpHomogeneousMatrix> &cMo, const std::vector<vpHomogeneousMatrix> &rMe, vpHomogeneousMatrix &eMc);
+
+#ifdef HE_WO_VISP
+    static void calibrationVerifrMo_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, const Mat &eMc, int n_sp);
+    static double calibrationErrVVS_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, const Mat &eMc, Mat& errVVS, int n_sp);
+    static int calibrationRotationTsaiOld_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat& eRc, int n_sp);
+    static int calibrationTranslationOld_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eRc, Mat &eTc, int n_sp);
+    static int calibrationTranslation_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eRc, Mat &eTc, int n_sp);
+    static int calibrationRotationTsai_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eRc, int n_sp);
+    static int calibrationRotationProcrustes_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eRc, int n_sp);
+    static int calibrationVVS_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eMc, int n_sp);
+#endif  //  HE_WO_wo_visp_VISP  
+
 };
 
 #endif

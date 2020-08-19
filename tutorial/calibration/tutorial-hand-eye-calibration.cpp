@@ -1,7 +1,9 @@
 //! \example tutorial-hand-eye-calibration.cpp
 #include <visp3/vision/vpHandEyeCalibration.h>
 #include <vector>
-//#include <opencv2/opencv.hpp?>
+//#include "hand-eye-calibration-without-visp.h"
+
+
 
 #define PI  3.14159265358979
 
@@ -139,6 +141,106 @@ bool make_yaml_from_txt(std::string& prefix_base2gripper_camera2board, std::stri
     return succeed;
 }
 
+#ifdef HE_WO_VISP
+
+Mat rot_mat_2_quaternion_2(const Mat& m33) {
+
+    double qx, qy, qz, qw,  
+        m00 = m33.at<double>(0, 0), m01 = m33.at<double>(0, 1), m02 = m33.at<double>(0, 2),
+        m10 = m33.at<double>(1, 0), m11 = m33.at<double>(1, 1), m12 = m33.at<double>(1, 2),
+        m20 = m33.at<double>(2, 0), m21 = m33.at<double>(2, 1), m22 = m33.at<double>(2, 2);
+
+    float tr = m00 + m11 + m22;
+
+    if (tr > 0) { 
+        float S = sqrt(tr+1.0) * 2; // S=4*qw 
+    qw = 0.25 * S;
+      qx = (m21 - m12) / S;
+        qy = (m02 - m20) / S; 
+          qz = (m10 - m01) / S; 
+          } else if ((m00 > m11)&(m00 > m22)) { 
+            float S = sqrt(1.0 + m00 - m11 - m22) * 2; // S=4*qx 
+              qw = (m21 - m12) / S;
+                qx = 0.25 * S;
+                  qy = (m01 + m10) / S; 
+                    qz = (m02 + m20) / S; 
+                    } else if (m11 > m22) { 
+                      float S = sqrt(1.0 + m11 - m00 - m22) * 2; // S=4*qy
+                        qw = (m02 - m20) / S;
+                          qx = (m01 + m10) / S; 
+                            qy = 0.25 * S;
+                              qz = (m12 + m21) / S; 
+                              } else { 
+                                float S = sqrt(1.0 + m22 - m00 - m11) * 2; // S=4*qz
+                                  qw = (m10 - m01) / S;
+                                    qx = (m02 + m20) / S;
+                                      qy = (m12 + m21) / S;
+                                        qz = 0.25 * S;
+                                        }
+    
+    Mat Q = (Mat_<double>(4, 1) << qx, qy, qz, qw);
+    //Mat Q = (Mat_<double>(4, 1) << qw, qx, qy, qz);
+    return Q;
+}    
+
+//void getQuaternion(Mat R, double Q[])
+Mat rot_mat_2_quaternion(const Mat& R)
+{
+    Mat Q(4, 1, CV_64F);
+    double trace = R.at<double>(0,0) + R.at<double>(1,1) + R.at<double>(2,2);
+     
+         if (trace > 0.0) 
+             {
+                     double s = sqrt(trace + 1.0);
+                             //Q[3] = (s * 0.5);
+                             Q.at<double>(3) = (s * 0.5);
+                                     s = 0.5 / s;
+                                             //Q[0] = ((R.at<double>(2,1) - R.at<double>(1,2)) * s);
+                                             Q.at<double>(0) = ((R.at<double>(2,1) - R.at<double>(1,2)) * s);
+                                                     //Q[1] = ((R.at<double>(0,2) - R.at<double>(2,0)) * s);
+                                                     Q.at<double>(1) = ((R.at<double>(0,2) - R.at<double>(2,0)) * s);
+                                                             //Q[2] = ((R.at<double>(1,0) - R.at<double>(0,1)) * s);
+                                                             Q.at<double>(2) = ((R.at<double>(1,0) - R.at<double>(0,1)) * s);
+                                                                 } 
+                                                                     
+                                                                         else 
+                                                                             {
+                                                                                     int i = R.at<double>(0,0) < R.at<double>(1,1) ? (R.at<double>(1,1) < R.at<double>(2,2) ? 2 : 1) : (R.at<double>(0,0) < R.at<double>(2,2) ? 2 : 0); 
+                                                                                             int j = (i + 1) % 3;  
+                                                                                                     int k = (i + 2) % 3;
+
+                                                                                                             double s = sqrt(R.at<double>(i, i) - R.at<double>(j,j) - R.at<double>(k,k) + 1.0);
+                                                                                                                     //Q[i] = s * 0.5;
+                                                                                                                     Q.at<double>(i) = s * 0.5;
+                                                                                                                             s = 0.5 / s;
+
+                                                                                                                                     //Q[3] = (R.at<double>(k,j) - R.at<double>(j,k)) * s;
+                                                                                                                                     Q.at<double>(3) = (R.at<double>(k,j) - R.at<double>(j,k)) * s;
+                                                                                                                                             //Q[j] = (R.at<double>(j,i) + R.at<double>(i,j)) * s;
+                                                                                                                                             Q.at<double>(j) = (R.at<double>(j,i) + R.at<double>(i,j)) * s;
+                                                                                                                                                     //Q[k] = (R.at<double>(k,i) + R.at<double>(i,k)) * s;
+                                                                                                                                                     Q.at<double>(k) = (R.at<double>(k,i) + R.at<double>(i,k)) * s;
+                                                                                                                                                         }
+                                                                                                                                                         return Q;
+                                                                                                                                                         }
+
+Mat vpHomo2Mat(const vpHomogeneousMatrix& vpHomo)
+{
+    int n_row = vpHomo.getRows(), n_col = vpHomo.getCols();//, CV_32F);
+    Mat matHomo(n_row, n_col, CV_64F);
+    double *data = (double *)matHomo.data;
+    for(int iR = 0; iR < n_row; iR++)
+    {
+        int offset = iR * n_col;
+        for(int iC = 0; iC < n_col; iC++)
+        {
+            data[offset + iC] = vpHomo[iR][iC];
+        }
+    }
+    //std::cout << "vpHomo : " << std::endl << vpHomo << std::endl << "matHomo : " << std::endl << matHomo << std::endl; exit(0);
+    return matHomo;
+}
+#endif  //  HE_WO_VISP
 
 int main(int argc, char *argv[])
 {
@@ -187,6 +289,7 @@ int main(int argc, char *argv[])
     std::vector<vpHomogeneousMatrix> cMo(ndata);
     std::vector<vpHomogeneousMatrix> wMe(ndata);
     vpHomogeneousMatrix eMc;
+
     
     if(is_floyd) 
     {   
@@ -220,9 +323,61 @@ int main(int argc, char *argv[])
     }
 
     int ret = vpHandEyeCalibration::calibrate(cMo, wMe, eMc);
+#ifdef HE_WO_VISP
+    int n_pose = cMo.size();
+    std::vector<Mat> li_cMo(n_pose), li_wMe(n_pose);
+    Mat eMc_wo_visp;
+    for(int iP = 0; iP < n_pose; iP++) 
+    {
+        li_cMo[iP] = vpHomo2Mat(cMo[iP]);
+        li_wMe[iP] = vpHomo2Mat(wMe[iP]);
+    }     
+    int ret2 = vpHandEyeCalibration::calibrate_wo_visp(li_cMo, li_wMe, eMc_wo_visp, 0);
+
+    if (ret2 == 0) {
+        std::cout << std::endl << "** Hand-eye calibration succeed : w/o visp" << std::endl;
+        std::cout << std::endl << "** Hand-eye (eMc) transformation estimated:" << std::endl;
+        std::cout << eMc_wo_visp << std::endl;
+        //Mat
+        std::pair<Mat, Mat> rot_tra = vpHandEyeCalibration::split_homogeneous_transform_matrix_into_rotation_and_translation(eMc_wo_visp, 0);
+        Mat eTRc, ePc, eRc = rot_tra.first, eTc = rot_tra.second;
+        Rodrigues(eRc, ePc);
+        eTRc.push_back(eTc);    eTRc.push_back(ePc);
+        std::cout << "** Corresponding pose vector: " << eTRc.t() << std::endl;
+        //vpThetaUVector erc(eMc.getRotationMatrix());
+        std::cout << std::endl << "** Translation [m]: " << eMc_wo_visp.at<double>(0, 3) << " " << eMc_wo_visp.at<double>(1, 3) << " " << eMc_wo_visp.at<double>(2, 3) << std::endl;
+        std::cout << "** Rotation (theta-u representation) [rad]: " << ePc.t() << std::endl;
+        std::cout << "** Rotation (theta-u representation) [deg]: " << vpHandEyeCalibration::rad2deg(ePc.at<double>(0)) << " " << vpHandEyeCalibration::rad2deg(ePc.at<double>(1)) << " " << vpHandEyeCalibration::rad2deg(ePc.at<double>(2)) << std::endl;
+        //vpQuaternionVector quaternion(eMc.getRotationMatrix());
+        Mat eQc = rot_mat_2_quaternion(eRc);
+        std::cout << "** Rotation (quaternion representation) [rad]: " << eQc.t() << std::endl;
+        Mat eQc2 = rot_mat_2_quaternion_2(eRc);
+        std::cout << "** Rotation (quaternion representation) [rad] 2 : " << eQc2.t() << std::endl;
+
+
+#if 0
+        // save eMc
+        //std::ofstream file_eMc("eMc.txt");
+        std::ofstream file_eMc(fn_gripper2camera + ".txt");
+        eMc.save(file_eMc);
+        vpPoseVector pose_vec(eMc);
+        //std::string output_filename("eMc.yaml");
+        std::string output_filename(fn_gripper2camera + ".yaml");
+        std::cout << std::endl << "Save transformation matrix eMc as a vpPoseVector in " << output_filename << std::endl;
+        pose_vec.saveYAML(output_filename, pose_vec);
+#endif  //  0        
+    }
+    else {
+        std::cout << std::endl << "** Hand-eye calibration failed : w/o visp" << std::endl;
+        std::cout << std::endl << "Check your input data and ensure they are covering the half sphere over the chessboard." << std::endl;
+        std::cout << std::endl << "See https://visp-doc.inria.fr/doxygen/visp-daily/tutorial-calibration-extrinsic.html" << std::endl;
+    }
+
+
+#endif  //  HE_WO_VISP    
 
     if (ret == 0) {
-        std::cout << std::endl << "** Hand-eye calibration succeed" << std::endl;
+        std::cout << std::endl << "** Hand-eye calibration succeed : ori" << std::endl;
         std::cout << std::endl << "** Hand-eye (eMc) transformation estimated:" << std::endl;
         std::cout << eMc << std::endl;
         std::cout << "** Corresponding pose vector: " << vpPoseVector(eMc).t() << std::endl;
@@ -246,7 +401,7 @@ int main(int argc, char *argv[])
         pose_vec.saveYAML(output_filename, pose_vec);
     }
     else {
-        std::cout << std::endl << "** Hand-eye calibration failed" << std::endl;
+        std::cout << std::endl << "** Hand-eye calibration failed : ori" << std::endl;
         std::cout << std::endl << "Check your input data and ensure they are covering the half sphere over the chessboard." << std::endl;
         std::cout << std::endl << "See https://visp-doc.inria.fr/doxygen/visp-daily/tutorial-calibration-extrinsic.html" << std::endl;
     }
