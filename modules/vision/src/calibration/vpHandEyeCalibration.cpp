@@ -1929,7 +1929,7 @@ int vpHandEyeCalibration::calibrationTranslation_wo_visp(const std::vector<Mat> 
 
 int vpHandEyeCalibration::calibrationRotationTsai_wo_visp(const std::vector<Mat> &cMo, const std::vector<Mat> &rMe, Mat &eRc, int n_sp)
 {
-    cout_indented(n_sp, "calibrationRotationTsaiOld_wo_visp START");   
+    cout_indented(n_sp, "calibrationRotationTsai_wo_visp START");   
     //vpMatrix A;
     //vpColVector B;
     unsigned int nbPose = (unsigned int) cMo.size();
@@ -2045,7 +2045,7 @@ int vpHandEyeCalibration::calibrationRotationTsai_wo_visp(const std::vector<Mat>
         printf("Mean residual (rotation) = %lf\n",res);
     }
 #endif
-    cout_indented(n_sp, "calibrationRotationTsaiOld_wo_visp END");   
+    cout_indented(n_sp, "calibrationRotationTsai_wo_visp END");   
     return 0;
 }
 
