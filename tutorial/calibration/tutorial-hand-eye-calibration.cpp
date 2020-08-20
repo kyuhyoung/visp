@@ -330,6 +330,7 @@ int main(int argc, char *argv[])
     for(int iP = 0; iP < n_pose; iP++) 
     {
         li_cMo[iP] = vpHomo2Mat(cMo[iP]);
+        //std::cout << "li_cMo[iP] " << std::endl << li_cMo[iP] << std::endl;    exit(0);
         li_wMe[iP] = vpHomo2Mat(wMe[iP]);
     }     
     int ret2 = vpHandEyeCalibration::calibrate_wo_visp(li_cMo, li_wMe, eMc_wo_visp, 0);

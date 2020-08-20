@@ -1427,6 +1427,13 @@ unsigned int pseudoInverse_wo_visp(const Mat& A, Mat &Ap, double svThreshold)
     }
     Mat U, sv, V, A_dummy = nrows_orig >= ncols_orig ? A.clone() : A.t();
     svdOpenCV_wo_visp(A_dummy, U, sv, V);
+#if 0
+    std::cout << "A_dummy : " << std::endl << A_dummy << std::endl;
+    std::cout << "U : " << std::endl << U << std::endl;
+    std::cout << "sv : " << std::endl << sv << std::endl;
+    std::cout << "V : " << std::endl << V << std::endl;
+    exit(0);
+#endif  //  0    
     compute_pseudo_inverse_wo_visp(U, sv, V, nrows, ncols, nrows_orig, ncols_orig, svThreshold, Ap, rank);
     return rank;
 }
@@ -1529,6 +1536,10 @@ int vpHandEyeCalibration::calibrationRotationTsaiOld_wo_visp(const std::vector<M
     // x = AtA^-1AtB is solved
     Mat Ap, AtA = A.t() * A;
     int rank = pseudoInverse_wo_visp(AtA, Ap, 1e-6);
+#if 0
+    std::cout << "AtA : " << std::endl << AtA << std::endl;
+    std::cout << "Ap : " << std::endl << Ap << std::endl;   exit(0);
+#endif  //  0    
     if(rank != 3) return -1;
     //print_mat_type(Ap, n_sp + 1);   print_mat_type(A.t(), n_sp + 1);    print_mat_type(B, n_sp + 1);
     x = Ap * A.t() * B;
