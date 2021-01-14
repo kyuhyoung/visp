@@ -1,3 +1,4 @@
+
 //! \example tutorial-hand-eye-calibration.cpp
 #include <visp3/vision/vpHandEyeCalibration.h>
 #include <vector>
